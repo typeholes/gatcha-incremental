@@ -93,10 +93,11 @@ function resetGameValues() {
   }
 }
 
-export function getBankruptcyValue() {
+export function getBankruptcyValue(upToGatchaIdx = game.bankruptcies) {
   const worth = game.worth >= 0 ? -1 : game.worth;
+  const responses = Object.values(game.responses).slice(0, upToGatchaIdx);
 
-  const responseMultiplier = Object.values(game.responses).reduce(
+  const responseMultiplier = responses.reduce(
     (a, b, i) => (a * Math.max(b, 1) * (b ? i + 1 : 1)) ** (1 + (b * i) / 40),
     1
   );
