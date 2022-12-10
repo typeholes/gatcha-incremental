@@ -61,6 +61,7 @@ module.exports = configure(function (/* ctx */) {
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // publicPath: '/',
+      publicPath: '/gatcha-incremental/',
       // analyze: true,
       // env: {},
       // rawDefine: {}

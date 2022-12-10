@@ -11,7 +11,7 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title> Gatch Fool </q-toolbar-title>
+        <q-toolbar-title> Gatcha Fool </q-toolbar-title>
 
         <div>pre-alpha v0.01</div>
       </q-toolbar>

@@ -67,8 +67,8 @@
 </template>
 
 <script setup lang="ts">
+import { QList, QItem, QItemSection, QCard, QCardSection, QBtn } from 'quasar';
 import {
-  GatchaNames,
   game,
   affordable,
   respond,
@@ -76,9 +76,11 @@ import {
   bankrupt,
   prestige,
   canPrestige,
-  ceil,
   getIncome,
 } from 'src/ts/game';
+import { GatchaNames } from 'src/ts/gatcha';
+
+import { ceil } from 'src/ts/util';
 import { computed } from 'vue';
 
 const names = computed(() => GatchaNames.slice(0, game.bankruptcies + 1));

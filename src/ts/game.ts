@@ -1,48 +1,8 @@
 import { reactive } from 'vue';
 import { Notify } from 'quasar';
-
-export const GatchaNames = ['Prank', 'Punk', 'Scam', 'Phishing'] as const;
-
-export type GatchaName = typeof GatchaNames[number];
-
-export type Gatcha = {
-  name: GatchaName;
-  cost: { base: number; growth: number };
-  value: { base: number; growth: number };
-  tierMessages: [string, string, string, string];
-};
-
-function Gatcha(
-  name: GatchaName,
-  costBase: number,
-  costGrowth: number,
-  valueBase: number,
-  valueGrowth: number,
-  tierMessages: [string, string, string, string]
-): Gatcha {
-  return {
-    name,
-    cost: { base: costBase, growth: costGrowth },
-    value: { base: valueBase, growth: valueGrowth },
-    tierMessages,
-  };
-}
-
-export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
-  tuple(
-    [
-      Gatcha('Prank', 1, 1.1, 1, 1.1, [
-        "You've learned to hang up",
-        'Just chillin and eating some jerky, boys',
-        'Mayby don\'t answer "scam likely"',
-        "s/jerky/beasty cool now I've got some old school beats",
-      ]),
-      Gatcha('Punk', 10, 1.15, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Scam', 100, 1.18, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Phishing', 1000, 1.2, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD']),
-    ].map((x) => [x.name, x])
-  )
-);
+import { sumOfPowers, ceil, tuple } from './util';
+import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
+import { pickReward, RewardTable } from './random';
 
 export type Game = {
   prestigeBase: number;
@@ -54,6 +14,7 @@ export type Game = {
   prestiges: number;
   divisors: Record<GatchaName, Record<'cost' | 'value', number>>;
   multipliers: Record<GatchaName, Record<'cost' | 'value', number>>;
+  gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
 };
 
 const initialDivisors: Record<
@@ -80,12 +41,8 @@ export const game: Game = reactive({
   multipliers: initialMultipliers,
   prestigeMultiplier: 1.5,
   prestigeBase: 1000,
+  gatchaRewards: Gatcha.mkRewardTable(0),
 });
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function tuple<Args extends any[]>(args: Args): Args {
-  return args;
-}
 
 export function getScaledGatcha(name: GatchaName, type: 'cost' | 'value') {
   const params = gatchas[name][type];
@@ -154,16 +111,12 @@ export function bankrupt() {
 
   game.bankruptcies++;
 
-  const nerfIdx =
-    ceil(Math.random() * 99999999, 0) %
-    Math.min(game.bankruptcies, GatchaNames.length);
-  const name = GatchaNames[nerfIdx];
-  const divisor = getBankruptcyValue();
-
-  if (!Number.isFinite(divisor)) {
-    debugger;
+  const [name, nerfType] = pickReward(game.gatchaRewards);
+  if (game.bankruptcies < GatchaNames.length) {
+    game.gatchaRewards = Gatcha.mkRewardTable(game.bankruptcies);
   }
-  const nerfType = Math.random() < 0.5 ? 'cost' : 'value';
+
+  const divisor = getBankruptcyValue();
 
   game.divisors[name][nerfType] += divisor;
   const message = `${name} ${nerfType} reduced by ${ceil(divisor)}`;
@@ -237,26 +190,4 @@ function gameLoop(time: number) {
 
   requestAnimationFrame(gameLoop);
 }
-
 requestAnimationFrame(gameLoop);
-
-function sumOfPowers(base: number, multiplier: number, cnt: number) {
-  if (cnt < 0) {
-    return 0;
-  }
-  if (cnt === 0) {
-    return base;
-  }
-  return ceil((base * multiplier ** (cnt + 1) - 1) / (multiplier - 1));
-}
-
-/*
-function inverseSumOfPowers(base: number, total: number) {
-  return Math.floor(Math.log((base - 1) * total + 1) / Math.log(base));
-}
-*/
-
-export function ceil(n: number, digits = 2) {
-  const mult = 10 ** digits;
-  return Math.ceil(n * mult) / mult;
-}
