@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { reactive } from 'vue';
 import { Notify } from 'quasar';
-import { sumOfPowers, ceil, tuple, runLazy } from './util';
+import { sumOfPowers, ceil, tuple, runLazy, TODO } from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
 
@@ -279,8 +279,50 @@ function gameLoop(time: number) {
   if (deltaTime > 500) {
     usedTime += deltaTime;
     game.worth += getIncome();
+    detectLock();
   }
 
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
+
+const TickLimit = 10000;
+export function detectLock() {
+  const [name, cost] = [
+    ...PrestigeTypes.map((name) => [name, prestigeCost(name)] as const),
+    ...GatchaNames.map(
+      (name) => [name, getScaledGatcha(name, 'cost')] as const
+    ),
+  ].reduce((a, b) => (b[1] < a[1] ? b : a));
+
+  if (cost <= game.worth) {
+    return 0;
+  }
+
+  const income = getIncome();
+  if (income === 0) {
+    zeroIncome(name, cost);
+  } else if (income < 0) {
+    const ticksNeeded = (-1 * game.worth) / income;
+    if (ticksNeeded < TickLimit) {
+      return Math.max(ticksNeeded,0);
+    }
+    TODO('handle too long until bankrupt');
+    game.worth = 0;
+  } else {
+    const moneyNeeded = cost - game.worth;
+    const ticksNeeded = moneyNeeded / income;
+
+    if (ticksNeeded < TickLimit) {
+      return ticksNeeded;
+    }
+    TODO('handle too long until buyable');
+    game.worth = cost;
+  }
+  return 0;
+}
+
+function zeroIncome(name: string, cost: number) {
+  TODO('handle zero income');
+  game.worth = cost;
+}

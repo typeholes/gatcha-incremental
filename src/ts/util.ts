@@ -1,3 +1,5 @@
+import { Notify } from 'quasar';
+
 export function sumOfPowers(base: number, multiplier: number, cnt: number) {
   if (cnt < 0) {
     return 0;
@@ -23,25 +25,27 @@ export function tuple<Args extends any[]>(args: Args): Args {
   return args;
 }
 
-export function sumOn<T>(
-  arr: T[],
-  toNumber: (t: T) => number
-) {
-    return arr.map( (x ) => toNumber(x) ).reduce((a, b) => a + b, 0);
+export function sumOn<T>(arr: T[], toNumber: (t: T) => number) {
+  return arr.map((x) => toNumber(x)).reduce((a, b) => a + b, 0);
 }
 
 export function defined<T>(x: T | undefined): x is T {
   return typeof x !== 'undefined' && x !== null;
 }
 
-export const id = <T>(t:T) => t
+export const id = <T>(t: T) => t;
 
 export type Lazy<T> = T | (() => T);
-export function runLazy<T>(t: Lazy<T>) : T {
-  if ( t instanceof Function ) {
+export function runLazy<T>(t: Lazy<T>): T {
+  if (t instanceof Function) {
     return t();
   }
   return t;
 }
 
-
+export function TODO(msg: string) {
+  Notify.create({
+    message: 'Not implemented: ' + msg,
+    type: 'TODO',
+  });
+}

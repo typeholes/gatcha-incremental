@@ -38,6 +38,9 @@
         </q-item>
       </q-expansion-item>
     </template>
+    <q-item>
+      <q-item-section> Wait Time: {{ ceil(detectLock(),0) }} </q-item-section>
+    </q-item>
   </q-list>
 </template>
 <script setup lang="ts">
@@ -46,6 +49,7 @@ import {
   game,
   prestigeCost,
   PrestigeDescriptions,
+  detectLock,
 } from 'src/ts/game';
 import { ceil } from 'src/ts/util';
 import { GatchaNames } from 'src/ts/gatcha';
