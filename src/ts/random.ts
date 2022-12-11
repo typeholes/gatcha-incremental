@@ -1,19 +1,25 @@
 import { sumOn } from './util';
 
-export type RewardTable<T> = { defaultSize: number; table: [number, T][] };
+export type RewardTable<T> = {
+  defaultSize: number;
+  sizeMultiplierOnReset: number;
+  table: [number, T][];
+};
 
 export function RewardTable<T>(
   rewards: T[],
-  defaultSize = 2
+  defaultSize = 1,
+  sizeMultiplierOnReset = 2
 ): RewardTable<T> {
   const table = {
     defaultSize,
+    sizeMultiplierOnReset,
     table: rewards.map((x) => [defaultSize, x] as [number, T]),
   };
   return table;
 }
 
-export function pickReward<T>(from: RewardTable<T>, chanceModifier: number) {
+export function pickReward<T>(from: RewardTable<T>, chanceModifier = 1) {
   const totalSize = sumOn(from.table, ([x]) => x);
   let r = Math.random() * totalSize;
 
@@ -37,6 +43,7 @@ export function pickReward<T>(from: RewardTable<T>, chanceModifier: number) {
 
 function resetWhenAllOne<T>(rewardTable: RewardTable<T>) {
   if (rewardTable.table.every(([x]) => x === 1)) {
+    rewardTable.defaultSize *= rewardTable.sizeMultiplierOnReset;
     rewardTable.table.forEach((x) => (x[0] = rewardTable.defaultSize));
   }
 }

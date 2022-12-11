@@ -18,6 +18,8 @@ export type Game = {
   multipliers: Record<GatchaName, Record<CostValue, number>>;
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
   gatchaRewardChanceModifier: number;
+  gatchaRewardChanceModifierScaling: number;
+  prestigeRewards: ReturnType<typeof prestigeRewards>;
 };
 
 const initialDivisors: () => Record<
@@ -46,7 +48,9 @@ export const game: Game = reactive({
     scale: { cost: 1.5, value: 1.5 },
   },
   gatchaRewards: Gatcha.mkRewardTable(0),
-  gatchaRewardChanceModifier: 1
+  gatchaRewardChanceModifier: 1,
+  gatchaRewardChanceModifierScaling: 2,
+  prestigeRewards: prestigeRewards(),
 });
 
 export function getScaledGatcha(name: GatchaName, type: 'cost' | 'value') {
@@ -119,7 +123,10 @@ export function bankrupt() {
 
   game.bankruptcies++;
 
-  const [name, nerfType] = pickReward(game.gatchaRewards, game.gatchaRewardChanceModifier);
+  const [name, nerfType] = pickReward(
+    game.gatchaRewards,
+    game.gatchaRewardChanceModifier
+  );
   if (game.bankruptcies < GatchaNames.length) {
     game.gatchaRewards = Gatcha.mkRewardTable(game.bankruptcies);
   }
@@ -154,8 +161,11 @@ export function prestige() {
   game.divisors = initialDivisors();
   game.multipliers = initialMultipliers();
 
+  const [message, effect] = pickReward(game.prestigeRewards);
+  effect();
+
   Notify.create({
-    message: `This doesn't do much yet, income * ${game.prestige.scale.value}`,
+    message: `${message}\nincome * ${game.prestige.scale.value}`,
     type: 'prestige',
   });
 }
@@ -195,6 +205,20 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
   }
 
   return reached;
+}
+
+function prestigeRewards() {
+  return RewardTable([
+    ['Extra Income', () => (game.baseIncome *= 1.1)] as const,
+    [
+      'Less likely to receive same rewards',
+      () => (game.gatchaRewardChanceModifier *= 2),
+    ] as const,
+    [
+      'More likely to receive same reward after getting all rewards',
+      () => (game.gatchaRewardChanceModifierScaling *= 2),
+    ] as const,
+  ]);
 }
 
 let usedTime = 0;

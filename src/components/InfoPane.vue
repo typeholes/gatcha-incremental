@@ -23,6 +23,13 @@
       </q-item>
     </q-expansion-item>
     <q-expansion-item :label="'Midlife Crisis cost:' + prestigeCost()">
+      <q-item
+        :inset-level="1"
+        v-for="[chance, [message]] of game.prestigeRewards.table"
+        :key="message"
+      >
+        <q-item-section> {{ message }}: {{ chance }} </q-item-section>
+      </q-item>
     </q-expansion-item>
   </q-list>
 </template>
