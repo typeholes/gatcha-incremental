@@ -4,7 +4,7 @@
       <q-item
         dense
         :inset-level="1"
-        v-for="idx in Math.max(GatchaNames.length, game.bankruptcies)"
+        v-for="idx in Math.min(GatchaNames.length, game.bankruptcies+1)"
         :key="idx"
       >
         <q-item-section>
@@ -39,7 +39,7 @@
       </q-expansion-item>
     </template>
     <q-item>
-      <q-item-section> Wait Time: {{ ceil(detectLock(),0) }} </q-item-section>
+      <q-item-section> Wait Time: {{ ceil(detectLock(), 0) }} </q-item-section>
     </q-item>
   </q-list>
 </template>
