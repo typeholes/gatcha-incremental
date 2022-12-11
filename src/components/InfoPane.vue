@@ -16,25 +16,37 @@
       <q-item
         dense
         :inset-level="1"
-        v-for="[chance, [name, type]], i of game.gatchaRewards.table"
+        v-for="([chance, [name, type]], i) of game.gatchaRewards.table"
         :key="i"
       >
-        <q-item-section> {{ name }} {{ type }} ({{ game.gatchaRewards.received[i]}}): {{ chance }} </q-item-section>
+        <q-item-section>
+          {{ name }} {{ type }} ({{ game.gatchaRewards.received[i] }}):
+          {{ chance }}
+        </q-item-section>
       </q-item>
     </q-expansion-item>
-    <q-expansion-item :label="'Midlife Crisis cost:' + prestigeCost()">
-      <q-item
-        :inset-level="1"
-        v-for="[chance, [message]], i of game.prestigeRewards.table"
-        :key="i"
-      >
-        <q-item-section> {{ message }} ({{ game.prestigeRewards.received[i] }}): {{ chance }} </q-item-section>
-      </q-item>
-    </q-expansion-item>
+    <template v-for="(description, type) of PrestigeDescriptions" :key="type">
+      <q-expansion-item :label="description + ' cost:' + prestigeCost(type)">
+        <q-item
+          :inset-level="1"
+          v-for="([chance, [message]], i) of game[type].rewards.table"
+          :key="i"
+        >
+          <q-item-section>
+            {{ message }} ({{ game[type].rewards.received[i] }}): {{ chance }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+    </template>
   </q-list>
 </template>
 <script setup lang="ts">
-import { getBankruptcyValue, game, prestigeCost } from 'src/ts/game';
+import {
+  getBankruptcyValue,
+  game,
+  prestigeCost,
+  PrestigeDescriptions,
+} from 'src/ts/game';
 import { ceil } from 'src/ts/util';
 import { GatchaNames } from 'src/ts/gatcha';
 </script>

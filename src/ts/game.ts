@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { reactive } from 'vue';
 import { Notify } from 'quasar';
 import { sumOfPowers, ceil, tuple } from './util';
@@ -5,21 +6,27 @@ import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
 
 export type Game = {
-  prestige: {
+  retirement: {
     base: Record<CostValue, number>;
     scale: Record<CostValue, number>;
+    cnt: number;
+    rewards: PrestigeRewardTable;
+  };
+  crisis: {
+    base: Record<CostValue, number>;
+    scale: Record<CostValue, number>;
+    cnt: number;
+    rewards: PrestigeRewardTable
   };
   responses: Record<GatchaName, number>;
   baseIncome: number;
   worth: number;
   bankruptcies: number;
-  prestiges: number;
   divisors: Record<GatchaName, Record<CostValue, number>>;
   multipliers: Record<GatchaName, Record<CostValue, number>>;
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
   gatchaRewardChanceModifier: number;
   gatchaRewardChanceModifierScaling: number;
-  prestigeRewards: ReturnType<typeof prestigeRewards>;
 };
 
 const initialDivisors: () => Record<
@@ -39,18 +46,24 @@ export const game: Game = reactive({
   baseIncome: 1,
   worth: 0,
   bankruptcies: 0,
-  prestiges: 0,
   divisors: initialDivisors(),
   multipliers: initialMultipliers(),
-  prestigeMultiplier: 10,
-  prestige: {
+  crisisMultiplier: 10,
+  crisis: {
     base: { cost: 10, value: 1.5 },
     scale: { cost: 1.5, value: 1.5 },
+    cnt: 0,
+    rewards: crisisRewards(),
+  },
+  retirement: {
+    base: { cost: 1000, value: 1.5 },
+    scale: { cost: 1.5, value: 1.5 },
+    cnt: 0,
+    rewards: retirementRewards(),
   },
   gatchaRewards: Gatcha.mkRewardTable(0),
   gatchaRewardChanceModifier: 1,
   gatchaRewardChanceModifierScaling: 2,
-  prestigeRewards: prestigeRewards(),
 });
 
 export function getScaledGatcha(name: GatchaName, type: 'cost' | 'value') {
@@ -71,9 +84,9 @@ export function getIncome() {
   let income =
     game.baseIncome *
     sumOfPowers(
-      game.prestige.base.value,
-      game.prestige.scale.value,
-      game.prestiges
+      game.crisis.base.value,
+      game.crisis.scale.value,
+      game.crisis.cnt
     );
 
   for (const name of GatchaNames) {
@@ -143,31 +156,49 @@ export function bankrupt() {
   });
 }
 
-export function prestigeCost() {
+export function prestigeCost(type: PrestigeType) {
   return sumOfPowers(
-    game.prestige.base.cost,
-    game.prestige.scale.cost,
-    game.prestiges
+    game[type].base.cost,
+    game[type].scale.cost,
+    game[type].cnt
   );
 }
 
-export function canPrestige() {
-  return game.worth > prestigeCost();
+export const PrestigeTypes = ['crisis', 'retirement'] as const;
+export type PrestigeType = typeof PrestigeTypes[number];
+
+export const PrestigeDescriptions = {
+  crisis: 'Mid Life Crisis',
+  retirement: 'Retire',
+};
+
+export function prestige(type: PrestigeType) {
+  game[type].cnt++;
+  const [message, effect] = pickReward(game[type].rewards);
+  effect();
+
+  Notify.create({
+    message: `${message}`,
+    type: type,
+  });
+
+  const prestige = { crisis, retirement }[type];
+  prestige();
 }
-export function prestige() {
-  game.prestiges++;
+
+export function canPrestige(type: PrestigeType) {
+  return game.worth > prestigeCost(type);
+}
+
+export function crisis() {
   resetGameValues();
 
   game.divisors = initialDivisors();
   game.multipliers = initialMultipliers();
 
-  const [message, effect] = pickReward(game.prestigeRewards);
-  effect();
+}
 
-  Notify.create({
-    message: `${message}\nincome * ${game.prestige.scale.value}`,
-    type: 'prestige',
-  });
+export function retirement() {
 }
 
 const tiers = [5, 10, 20, 40];
@@ -207,7 +238,9 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
   return reached;
 }
 
-function prestigeRewards() {
+type PrestigeRewardTable = RewardTable<readonly [string, () => void]>;
+
+function crisisRewards() : PrestigeRewardTable {
   return RewardTable([
     ['Extra Income', () => (game.baseIncome *= 1.1)] as const,
     [
@@ -218,6 +251,11 @@ function prestigeRewards() {
       'More likely to receive same reward after getting all rewards',
       () => (game.gatchaRewardChanceModifierScaling *= 2),
     ] as const,
+  ]);
+}
+function retirementRewards() : PrestigeRewardTable {
+  return RewardTable([
+    ['Not Implemented', () => {}],
   ]);
 }
 

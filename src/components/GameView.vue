@@ -17,13 +17,18 @@
               />
             </q-card-section>
 
-            <q-card-section>
-              <q-btn
-                label="Mid Life Crisis"
-                v-if="canPrestige()"
-                @click="prestige"
-              />
-            </q-card-section>
+            <template
+              v-for="(description, type) of PrestigeDescriptions"
+              :key="type"
+            >
+              <q-card-section>
+                <q-btn
+                  :label="description"
+                  v-if="canPrestige(type)"
+                  @click="prestige(type)"
+                />
+              </q-card-section>
+            </template>
           </q-card-section>
         </q-card>
       </q-item-section>
@@ -74,9 +79,10 @@ import {
   respond,
   getScaledGatcha,
   bankrupt,
-  prestige,
   canPrestige,
+  prestige,
   getIncome,
+  PrestigeDescriptions,
 } from 'src/ts/game';
 import { GatchaNames } from 'src/ts/gatcha';
 

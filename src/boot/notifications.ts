@@ -16,10 +16,18 @@ Notify.registerType('tier', {
   classes: 'glossy',
 });
 
-Notify.registerType('prestige', {
+Notify.registerType('crisis', {
   icon: 'announcement',
   progress: true,
   color: 'green',
   textColor: 'black',
+  classes: 'glossy',
+});
+
+Notify.registerType('retirement', {
+  icon: 'announcement',
+  progress: true,
+  color: 'purple',
+  textColor: 'white',
   classes: 'glossy',
 });
