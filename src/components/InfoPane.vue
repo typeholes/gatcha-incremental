@@ -16,19 +16,19 @@
       <q-item
         dense
         :inset-level="1"
-        v-for="[chance, [name, type]] of game.gatchaRewards.table"
-        :key="name + type"
+        v-for="[chance, [name, type]], i of game.gatchaRewards.table"
+        :key="i"
       >
-        <q-item-section> {{ name }} {{ type }}: {{ chance }} </q-item-section>
+        <q-item-section> {{ name }} {{ type }} ({{ game.gatchaRewards.received[i]}}): {{ chance }} </q-item-section>
       </q-item>
     </q-expansion-item>
     <q-expansion-item :label="'Midlife Crisis cost:' + prestigeCost()">
       <q-item
         :inset-level="1"
-        v-for="[chance, [message]] of game.prestigeRewards.table"
-        :key="message"
+        v-for="[chance, [message]], i of game.prestigeRewards.table"
+        :key="i"
       >
-        <q-item-section> {{ message }}: {{ chance }} </q-item-section>
+        <q-item-section> {{ message }} ({{ game.prestigeRewards.received[i] }}): {{ chance }} </q-item-section>
       </q-item>
     </q-expansion-item>
   </q-list>

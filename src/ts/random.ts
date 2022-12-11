@@ -4,6 +4,7 @@ export type RewardTable<T> = {
   defaultSize: number;
   sizeMultiplierOnReset: number;
   table: [number, T][];
+  received: Record<number, number>;
 };
 
 export function RewardTable<T>(
@@ -15,6 +16,7 @@ export function RewardTable<T>(
     defaultSize,
     sizeMultiplierOnReset,
     table: rewards.map((x) => [defaultSize, x] as [number, T]),
+    received: Object.fromEntries( rewards.map( (x,i) => [i,0])),
   };
   return table;
 }
@@ -30,6 +32,8 @@ export function pickReward<T>(from: RewardTable<T>, chanceModifier = 1) {
       if (size > 1) {
         option[0] = Math.max(1, option[0] - chanceModifier);
       }
+
+      from.received[i] ++;
 
       resetWhenAllOne(from);
       return reward;
