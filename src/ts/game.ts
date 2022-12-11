@@ -17,6 +17,7 @@ export type Game = {
   divisors: Record<GatchaName, Record<CostValue, number>>;
   multipliers: Record<GatchaName, Record<CostValue, number>>;
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
+  gatchaRewardChanceModifier: number;
 };
 
 const initialDivisors: () => Record<
@@ -45,6 +46,7 @@ export const game: Game = reactive({
     scale: { cost: 1.5, value: 1.5 },
   },
   gatchaRewards: Gatcha.mkRewardTable(0),
+  gatchaRewardChanceModifier: 1
 });
 
 export function getScaledGatcha(name: GatchaName, type: 'cost' | 'value') {
@@ -117,7 +119,7 @@ export function bankrupt() {
 
   game.bankruptcies++;
 
-  const [name, nerfType] = pickReward(game.gatchaRewards);
+  const [name, nerfType] = pickReward(game.gatchaRewards, game.gatchaRewardChanceModifier);
   if (game.bankruptcies < GatchaNames.length) {
     game.gatchaRewards = Gatcha.mkRewardTable(game.bankruptcies);
   }

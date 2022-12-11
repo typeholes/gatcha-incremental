@@ -16,7 +16,7 @@
       <q-item
         dense
         :inset-level="1"
-        v-for="[chance, [name, type]] of game.gatchaRewards"
+        v-for="[chance, [name, type]] of game.gatchaRewards.table"
         :key="name + type"
       >
         <q-item-section> {{ name }} {{ type }}: {{ chance }} </q-item-section>
