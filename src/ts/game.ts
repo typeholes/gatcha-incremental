@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { reactive } from 'vue';
 import { Notify } from 'quasar';
-import { sumOfPowers, ceil, tuple } from './util';
+import { sumOfPowers, ceil, tuple, runLazy } from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
 
@@ -11,12 +11,14 @@ export type Game = {
     scale: Record<CostValue, number>;
     cnt: number;
     rewards: PrestigeRewardTable;
+    rewardCnt: number | (() => number);
   };
   crisis: {
     base: Record<CostValue, number>;
     scale: Record<CostValue, number>;
     cnt: number;
-    rewards: PrestigeRewardTable
+    rewards: PrestigeRewardTable;
+    rewardCnt: number | (() => number);
   };
   responses: Record<GatchaName, number>;
   baseIncome: number;
@@ -54,12 +56,14 @@ export const game: Game = reactive({
     scale: { cost: 1.5, value: 1.5 },
     cnt: 0,
     rewards: crisisRewards(),
+    rewardCnt: 1,
   },
   retirement: {
     base: { cost: 1000, value: 1.5 },
     scale: { cost: 1.5, value: 1.5 },
     cnt: 0,
     rewards: retirementRewards(),
+    rewardCnt: () => game.retirement.cnt,
   },
   gatchaRewards: Gatcha.mkRewardTable(0),
   gatchaRewardChanceModifier: 1,
@@ -174,13 +178,16 @@ export const PrestigeDescriptions = {
 
 export function prestige(type: PrestigeType) {
   game[type].cnt++;
-  const [message, effect] = pickReward(game[type].rewards);
-  effect();
 
-  Notify.create({
-    message: `${message}`,
-    type: type,
-  });
+  for (let i = 0; i <= runLazy(game[type].rewardCnt); i++) {
+    const [message, effect] = pickReward(game[type].rewards);
+    effect();
+
+    Notify.create({
+      message: `${message}`,
+      type: type,
+    });
+  }
 
   const prestige = { crisis, retirement }[type];
   prestige();
@@ -195,11 +202,9 @@ export function crisis() {
 
   game.divisors = initialDivisors();
   game.multipliers = initialMultipliers();
-
 }
 
-export function retirement() {
-}
+export function retirement() {}
 
 const tiers = [5, 10, 20, 40];
 export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
@@ -240,7 +245,7 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
 
 type PrestigeRewardTable = RewardTable<readonly [string, () => void]>;
 
-function crisisRewards() : PrestigeRewardTable {
+function crisisRewards(): PrestigeRewardTable {
   return RewardTable([
     ['Extra Income', () => (game.baseIncome *= 1.1)] as const,
     [
@@ -253,9 +258,18 @@ function crisisRewards() : PrestigeRewardTable {
     ] as const,
   ]);
 }
-function retirementRewards() : PrestigeRewardTable {
+function retirementRewards(): PrestigeRewardTable {
   return RewardTable([
-    ['Not Implemented', () => {}],
+    [
+      'Rewards per Mid Life Crises',
+      () => (game.crisis.rewardCnt = runLazy(game.crisis.rewardCnt) + 1),
+    ],
+    ['Mid Life Crisis cost reduced', () => (game.crisis.base.cost *= 0.9)],
+    ['Mid Life Crisis scaling reduced', () => (game.crisis.scale.cost *= 0.95)],
+    [
+      'Mid Life Crisis income scaling increased',
+      () => (game.crisis.scale.value *= 1.05),
+    ],
   ]);
 }
 
