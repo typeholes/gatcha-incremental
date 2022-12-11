@@ -13,17 +13,18 @@ export function pickReward<T>(from: RewardTable<T>) {
   const totalSize = sumOn(from, ([x]) => x);
   let r = Math.random() * totalSize;
 
-  for (const i in from ) {
+  for (const i in from) {
     const option = from[i];
-    const [size, reward] = option
+    const [size, reward] = option;
     if (r < size) {
-      if (size > 1) { option[0]--; }
+      if (size > 1) {
+        option[0]--;
+      }
       return reward;
     }
 
     r -= size;
   }
 
-  debugger; // should never get here
-  throw 'oops';
+  throw 'pickReward exhausted all rewards';
 }

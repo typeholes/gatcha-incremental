@@ -5,31 +5,31 @@ import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
 
 export type Game = {
-  prestigeBase: number;
-  prestigeMultiplier: number;
+  prestige: {
+    base: Record<CostValue, number>;
+    scale: Record<CostValue, number>;
+  };
   responses: Record<GatchaName, number>;
   baseIncome: number;
   worth: number;
   bankruptcies: number;
   prestiges: number;
-  divisors: Record<GatchaName, Record<'cost' | 'value', number>>;
-  multipliers: Record<GatchaName, Record<'cost' | 'value', number>>;
+  divisors: Record<GatchaName, Record<CostValue, number>>;
+  multipliers: Record<GatchaName, Record<CostValue, number>>;
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
 };
 
-const initialDivisors: Record<
+const initialDivisors: () => Record<
   GatchaName,
-  Record<'cost' | 'value', number>
-> = Object.fromEntries(
-  tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }]))
-);
+  Record<CostValue, number>
+> = () =>
+  Object.fromEntries(tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }])));
 
-const initialMultipliers: Record<
+const initialMultipliers: () => Record<
   GatchaName,
-  Record<'cost' | 'value', number>
-> = Object.fromEntries(
-  tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }]))
-);
+  Record<CostValue, number>
+> = () =>
+  Object.fromEntries(tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }])));
 
 export const game: Game = reactive({
   responses: Object.fromEntries(tuple(GatchaNames.map((x) => [x, 0]))),
@@ -37,10 +37,13 @@ export const game: Game = reactive({
   worth: 0,
   bankruptcies: 0,
   prestiges: 0,
-  divisors: initialDivisors,
-  multipliers: initialMultipliers,
-  prestigeMultiplier: 1.5,
-  prestigeBase: 1000,
+  divisors: initialDivisors(),
+  multipliers: initialMultipliers(),
+  prestigeMultiplier: 10,
+  prestige: {
+    base: { cost: 10, value: 1.5 },
+    scale: { cost: 1.5, value: 1.5 },
+  },
   gatchaRewards: Gatcha.mkRewardTable(0),
 });
 
@@ -59,11 +62,13 @@ export function affordable(name: GatchaName) {
 }
 
 export function getIncome() {
-  let income = sumOfPowers(
-    game.baseIncome,
-    game.prestigeMultiplier,
-    game.prestiges
-  );
+  let income =
+    game.baseIncome *
+    sumOfPowers(
+      game.prestige.base.value,
+      game.prestige.scale.value,
+      game.prestiges
+    );
 
   for (const name of GatchaNames) {
     income -= getScaledGatcha(name, 'value');
@@ -129,17 +134,26 @@ export function bankrupt() {
   });
 }
 
-export function canPrestige() {
-  return (
-    game.worth >
-    sumOfPowers(game.prestigeBase, game.prestigeMultiplier, game.prestiges)
+export function prestigeCost() {
+  return sumOfPowers(
+    game.prestige.base.cost,
+    game.prestige.scale.cost,
+    game.prestiges
   );
+}
+
+export function canPrestige() {
+  return game.worth > prestigeCost();
 }
 export function prestige() {
   game.prestiges++;
   resetGameValues();
+
+  game.divisors = initialDivisors();
+  game.multipliers = initialMultipliers();
+
   Notify.create({
-    message: `This doesn't do much yet, income * ${game.prestigeMultiplier}`,
+    message: `This doesn't do much yet, income * ${game.prestige.scale.value}`,
     type: 'prestige',
   });
 }

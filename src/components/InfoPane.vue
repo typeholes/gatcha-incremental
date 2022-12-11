@@ -22,10 +22,12 @@
         <q-item-section> {{ name }} {{ type }}: {{ chance }} </q-item-section>
       </q-item>
     </q-expansion-item>
+    <q-expansion-item :label="'Midlife Crisis cost:' + prestigeCost()">
+    </q-expansion-item>
   </q-list>
 </template>
 <script setup lang="ts">
-import { getBankruptcyValue, game } from 'src/ts/game';
+import { getBankruptcyValue, game, prestigeCost } from 'src/ts/game';
 import { ceil } from 'src/ts/util';
 import { GatchaNames } from 'src/ts/gatcha';
 </script>
