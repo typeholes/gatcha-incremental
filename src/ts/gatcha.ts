@@ -34,15 +34,15 @@ export type Gatcha = {
 export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
   tuple(
     [
-      Gatcha('Prank', 1, 1.1, 1, 1.1, [
+      Gatcha('Prank', 1, 1.5, 1, 1.5, [
         "You've learned to hang up",
         'Just chillin and eating some jerky, boys',
         'Mayby don\'t answer "scam likely"',
         "s/jerky/beasty cool now I've got some old school beats",
       ]),
-      Gatcha('Punk', 10, 1.15, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Scam', 100, 1.18, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Phishing', 1000, 1.2, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Punk', 10, 1.03, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Scam', 100, 1.12, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Phishing', 1000, 1.15, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD']),
     ].map((x) => [x.name, x])
   )
 );
@@ -50,8 +50,7 @@ export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
 Gatcha.mkRewardTable = (
   bankruptcies: number
 ): RewardTable<readonly [GatchaName, CostValue]> => {
-  const n = bankruptcies + 1;
-  const cnt = Math.min(Math.max(1, n), GatchaNames.length);
+  const cnt = Math.min(Math.max(1, bankruptcies), GatchaNames.length);
   const names = GatchaNames.slice(0, cnt);
   const rewards = names
     .map((name) => CostValue.map((type) => [name, type] as const))

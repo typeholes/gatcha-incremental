@@ -1,5 +1,17 @@
 import { Notify } from 'quasar';
 
+export function power(base: number, multiplier: number, cnt: number) {
+  if (cnt < 0) {
+    return 0;
+  }
+
+  // if (cnt === 0) {
+  //   return base;
+  // }
+
+  return base * multiplier ** cnt;
+}
+
 export function sumOfPowers(base: number, multiplier: number, cnt: number) {
   if (cnt < 0) {
     return 0;
@@ -7,7 +19,26 @@ export function sumOfPowers(base: number, multiplier: number, cnt: number) {
   if (cnt === 0) {
     return base;
   }
-  return ceil((base * multiplier ** (cnt + 1) - 1) / (multiplier - 1));
+
+  //  const sum = ceil((base * multiplier) ** (cnt - 1 ) / (multiplier-1));
+
+  let naive = base;
+  let spent = 0;
+  for (let i = 0; i < cnt; i++) {
+    spent += naive;
+    naive *= multiplier;
+  }
+
+  return spent;
+
+  /*
+  if (spent != sum) {
+    console.log({ naive, sum, base, multiplier, cnt });
+    // debugger;
+  }
+
+  return sum;
+  */
 }
 /*
 function inverseSumOfPowers(base: number, total: number) {
@@ -18,6 +49,11 @@ function inverseSumOfPowers(base: number, total: number) {
 export function ceil(n: number, digits = 2) {
   const mult = 10 ** digits;
   return Math.ceil(n * mult) / mult;
+}
+
+export function floor(n: number, digits = 2) {
+  const mult = 10 ** digits;
+  return Math.floor(n * mult) / mult;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

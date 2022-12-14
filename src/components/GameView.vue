@@ -8,7 +8,7 @@
             <q-card-section>
               Net Worth: ${{ ceil(game.worth) }}
             </q-card-section>
-
+<q-space/>
             <q-card-section>
               <q-btn
                 label="Go Bankrupt"
@@ -63,6 +63,14 @@
                 <br />/ {{ ceil(game.divisors[name].cost) }} <br />*
                 {{ ceil(game.multipliers[name].cost) }}
               </q-card-section>
+
+              <q-card-section>
+                <q-btn
+                  :label="calcNext[name].value.map(ceil).join (': ')"
+                  :disable="game.worth < calcNext[name].value[1]"
+                  @click="respond(name, calcNext[name].value)"
+                />
+              </q-card-section>
             </q-card-section>
           </q-card>
         </q-item-section>
@@ -83,11 +91,17 @@ import {
   prestige,
   getIncome,
   PrestigeDescriptions,
+  availableGatchas,
+  nextBuy,
 } from 'src/ts/game';
 import { GatchaNames } from 'src/ts/gatcha';
 
 import { ceil } from 'src/ts/util';
 import { computed } from 'vue';
 
-const names = computed(() => GatchaNames.slice(0, game.bankruptcies + 1));
+const names = computed(() => GatchaNames.slice(0, availableGatchas()));
+
+const calcNext = Object.fromEntries(
+  GatchaNames.map((name) => [name, computed(() => nextBuy(name))])
+);
 </script>

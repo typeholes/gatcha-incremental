@@ -4,7 +4,7 @@
       <q-item
         dense
         :inset-level="1"
-        v-for="idx in Math.min(GatchaNames.length, game.bankruptcies+1)"
+        v-for="idx in Math.min(GatchaNames.length, availableGatchas())"
         :key="idx"
       >
         <q-item-section>
@@ -39,7 +39,10 @@
       </q-expansion-item>
     </template>
     <q-item>
-      <q-item-section> Wait Time: {{ ceil(detectLock(), 0) }} </q-item-section>
+      <q-item-section> Wait Time: {{ ceil(detectLock(false), 0) }} </q-item-section>
+      <q-item-section v-if="mercyTicks > 0"
+        >Mercy Time: {{mercyTicks}}</q-item-section
+      >
     </q-item>
   </q-list>
 </template>
@@ -50,6 +53,8 @@ import {
   prestigeCost,
   PrestigeDescriptions,
   detectLock,
+  availableGatchas,
+  mercyTicks,
 } from 'src/ts/game';
 import { ceil } from 'src/ts/util';
 import { GatchaNames } from 'src/ts/gatcha';
