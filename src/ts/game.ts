@@ -54,7 +54,7 @@ const initialMultipliers: () => Record<
 > = () =>
   Object.fromEntries(tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }])));
 
-export let game: Game = reactive({
+export const game: Game = reactive({
   responses: Object.fromEntries(tuple(GatchaNames.map((x) => [x, 0]))),
   baseIncome: 1,
   worth: 0,
@@ -413,6 +413,7 @@ function save() {
 function load() {
   const saveStr = window.localStorage.getItem(SaveKey);
   if (defined(saveStr)) {
-    game = JSON.parse(saveStr);
+    const loadedGame = JSON.parse(saveStr);
+    Object.assign(game, loadedGame);
   }
 }
