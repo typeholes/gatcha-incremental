@@ -50,7 +50,7 @@
 
               <q-card-section>
                 Losses {{ ceil(getScaledGatcha(name, 'value')) }} <br />/
-                {{ ceil(game.divisors[name].value) }} <br />*
+                {{ ceil(getDivisor(name, 'value')) }} <br />*
                 {{ ceil(game.multipliers[name].value) }}
               </q-card-section>
 
@@ -60,7 +60,7 @@
                   :disable="!affordable(name)"
                   @click="respond(name)"
                 />
-                <br />/ {{ ceil(game.divisors[name].cost) }} <br />*
+                <br />/ {{ ceil(getDivisor(name,'cost')) }} <br />*
                 {{ ceil(game.multipliers[name].cost) }}
               </q-card-section>
 
@@ -93,6 +93,7 @@ import {
   PrestigeDescriptions,
   availableGatchas,
   nextBuy,
+  getDivisor,
 } from 'src/ts/game';
 import { GatchaNames } from 'src/ts/gatcha';
 

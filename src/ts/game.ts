@@ -26,6 +26,7 @@ export type Game = {
   baseIncome: number;
   worth: number;
   bankruptcies: number;
+  tmpDivisors: Record<GatchaName, Record<CostValue, number>>;
   divisors: Record<GatchaName, Record<CostValue, number>>;
   multipliers: Record<GatchaName, Record<CostValue, number>>;
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
@@ -51,6 +52,7 @@ export const game: Game = reactive({
   worth: 0,
   bankruptcies: 0,
   divisors: initialDivisors(),
+  tmpDivisors: initialDivisors(),
   multipliers: initialMultipliers(),
   crisisMultiplier: 10,
   crisis: {
@@ -102,6 +104,10 @@ export function nextBuy(name: GatchaName): [number, number] {
   return [diff, costDiff];
 }
 
+export function getDivisor(name: GatchaName, type: CostValue) {
+  return game.divisors[name][type] * game.tmpDivisors[name][type];
+}
+
 export function getScaledGatcha(
   name: GatchaName,
   type: 'cost' | 'value',
@@ -110,7 +116,7 @@ export function getScaledGatcha(
   const params = gatchas[name][type];
   const cnt = _cnt + (type === 'value' ? -1 : 0);
   return (
-    (power(params.base, params.growth, cnt) / game.divisors[name][type]) *
+    (power(params.base, params.growth, cnt) / getDivisor(name,type)) *
     game.multipliers[name][type]
   );
 }
@@ -154,6 +160,7 @@ function resetGameValues() {
   for (const name of GatchaNames) {
     game.responses[name] = 0;
   }
+  game.tmpDivisors = initialDivisors();
 }
 
 export function getBankruptcyValue(upToGatchaIdx = game.bankruptcies) {
@@ -222,6 +229,8 @@ export function prestige(type: PrestigeType) {
 
   game.bankruptcies = 0;
 
+  game.tmpDivisors = initialDivisors();
+
   for (let i = 0; i < runLazy(game[type].rewardCnt); i++) {
     const [message, effect] = pickReward(game[type].rewards);
     effect();
@@ -249,7 +258,7 @@ export function crisis() {
 
 export function retirement() {}
 
-const tiers = [5, 10, 20, 40];
+const tiers = [5, 12, 25, 40, 50];
 export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
   const reached = tiers
     .map((x, i) =>
@@ -261,19 +270,22 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
 
   for (const t of reached) {
     if (t) {
-      const maxTiers = gatchas[name].tierMessages.length - 2;
+      const maxTiers = gatchas[name].tierMessages.length - 1;
       console.log({ tier: t.tier, maxTiers });
       let message = '';
 
       const divisor = 1;
       if (t.tier === maxTiers) {
+        game.multipliers[name].cost += 1000000;
+        message = `${name} is no longer interested in you`;
+      } else if (t.tier === maxTiers - 1) {
+        game.multipliers[name].value -= divisor/100;
+        message = `${name} me? No, ${name} you`;
+      } else if (t.tier === maxTiers - 2) {
         game.multipliers[name].value = 0;
         message = `You no longer fall for ${name}`;
-      } else if (t.tier > maxTiers) {
-        game.multipliers[name].value -= divisor;
-        message = `${name} me? No, ${name} you`;
       } else {
-        game.divisors[name].value += divisor;
+        game.tmpDivisors[name].value += divisor;
       }
 
       Notify.create({
@@ -395,7 +407,7 @@ function setMercy(doSetMercy: boolean, msg: string, effect: () => void) {
 }
 
 export function availableGatchas() {
-  return Math.min(game.bankruptcies, game.retirement.cnt) + 1;
+  return Math.min(game.bankruptcies, game.crisis.cnt) + 1;
 }
 
 function save() {

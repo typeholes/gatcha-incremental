@@ -10,7 +10,7 @@ export function Gatcha(
   costGrowth: number,
   valueBase: number,
   valueGrowth: number,
-  tierMessages: [string, string, string, string]
+  tierMessages: [string, string, string, string, string]
 ): Gatcha {
   return {
     name,
@@ -28,21 +28,22 @@ export type Gatcha = {
   name: GatchaName;
   cost: { base: number; growth: number };
   value: { base: number; growth: number };
-  tierMessages: [string, string, string, string];
+  tierMessages: [string, string, string, string, string];
 };
 
 export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
   tuple(
     [
-      Gatcha('Prank', 1, 1.5, 1, 1.5, [
+      Gatcha('Prank', 1, 1.1, 1, 1.2, [
         "You've learned to hang up",
         'Just chillin and eating some jerky, boys',
         'Mayby don\'t answer "scam likely"',
         "s/jerky/beasty cool now I've got some old school beats",
+        'TBD',
       ]),
-      Gatcha('Punk', 10, 1.03, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Scam', 100, 1.12, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Phishing', 1000, 1.15, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Punk', 10, 1.03, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Scam', 100, 1.12, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Phishing', 1000, 1.15, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
     ].map((x) => [x.name, x])
   )
 );
