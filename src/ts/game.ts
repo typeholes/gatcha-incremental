@@ -1,9 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { reactive, nextTick } from 'vue';
 import { Notify } from 'quasar';
-import { ceil, tuple, runLazy, TODO, power, sumOfPowers, floor } from './util';
+import {
+  ceil,
+  tuple,
+  runLazy,
+  TODO,
+  power,
+  sumOfPowers,
+  floor,
+  defined,
+} from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
+
+const SaveKey = 'gatha-fool';
 
 export type Game = {
   retirement: {
@@ -43,7 +54,7 @@ const initialMultipliers: () => Record<
 > = () =>
   Object.fromEntries(tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }])));
 
-export const game: Game = reactive({
+export let game: Game = reactive({
   responses: Object.fromEntries(tuple(GatchaNames.map((x) => [x, 0]))),
   baseIncome: 1,
   worth: 0,
@@ -330,8 +341,11 @@ function gameLoop(time: number) {
     }
   }
 
+  save();
   nextTick(() => requestAnimationFrame(gameLoop));
 }
+
+load();
 requestAnimationFrame(gameLoop);
 
 export let mercyTicks = -1;
@@ -389,4 +403,16 @@ function setMercy(doSetMercy: boolean, msg: string, effect: () => void) {
 
 export function availableGatchas() {
   return Math.min(game.bankruptcies, game.retirement.cnt) + 1;
+}
+
+function save() {
+  const saveStr = JSON.stringify(game);
+  window.localStorage.setItem(SaveKey, saveStr);
+}
+
+function load() {
+  const saveStr = window.localStorage.getItem(SaveKey);
+  if (defined(saveStr)) {
+    game = JSON.parse(saveStr);
+  }
 }

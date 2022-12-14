@@ -65,8 +65,8 @@ export function sumOn<T>(arr: T[], toNumber: (t: T) => number) {
   return arr.map((x) => toNumber(x)).reduce((a, b) => a + b, 0);
 }
 
-export function defined<T>(x: T | undefined): x is T {
-  return typeof x !== 'undefined' && x !== null;
+export function defined<T>(x: T | undefined | null) : x is T {
+  return typeof (x ?? undefined) !== 'undefined'
 }
 
 export const id = <T>(t: T) => t;
