@@ -31,3 +31,11 @@ Notify.registerType('retirement', {
   textColor: 'white',
   classes: 'glossy',
 });
+
+Notify.registerType('reset', {
+  icon: 'announcement',
+  progress: true,
+  color: 'red-14',
+  textColor: 'white',
+  classes: 'glossy',
+});

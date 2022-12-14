@@ -39,15 +39,24 @@
       </q-expansion-item>
     </template>
     <q-item>
-      <q-item-section> Wait Time: {{ ceil(detectLock(false), 0) }} </q-item-section>
+      <q-item-section>
+        Wait Time: {{ ceil(detectLock(false), 0) }}
+      </q-item-section>
       <q-item-section v-if="mercyTicks > 0"
-        >Mercy Time: {{mercyTicks}}</q-item-section
+        >Mercy Time: {{ mercyTicks }}</q-item-section
       >
+    </q-item>
+    <q-space />
+    <q-item>
+      <q-item-section>
+        <q-btn label="Hard Reset" @click="hardReset" />
+      </q-item-section>
     </q-item>
   </q-list>
 </template>
 <script setup lang="ts">
 import {
+  hardReset,
   getBankruptcyValue,
   game,
   prestigeCost,

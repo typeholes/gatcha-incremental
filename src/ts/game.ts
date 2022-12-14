@@ -1,16 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { reactive, nextTick } from 'vue';
 import { Notify } from 'quasar';
-import {
-  ceil,
-  tuple,
-  runLazy,
-  TODO,
-  power,
-  sumOfPowers,
-  floor,
-  defined,
-} from './util';
+import { ceil, tuple, runLazy, TODO, power, defined } from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
 
@@ -154,9 +145,9 @@ export function respond(
   }
 }
 
-function getBuyAmt(name: GatchaName) {
-  return 1;
-}
+// function getBuyAmt(name: GatchaName) {
+//   return 1;
+// }
 
 function resetGameValues() {
   game.worth = 0;
@@ -325,10 +316,11 @@ function retirementRewards(): PrestigeRewardTable {
   ]);
 }
 
+let pause = false;
 let usedTime = 0;
 function gameLoop(time: number) {
   const deltaTime = time - usedTime;
-  if (deltaTime > 500) {
+  if (!pause && deltaTime > 500) {
     usedTime += deltaTime;
     game.worth += getIncome();
     if (mercyTicks === 0) {
@@ -339,9 +331,9 @@ function gameLoop(time: number) {
     } else {
       detectLock(true);
     }
+    save();
   }
 
-  save();
   nextTick(() => requestAnimationFrame(gameLoop));
 }
 
@@ -417,4 +409,19 @@ function load() {
     const loadedGame = JSON.parse(saveStr);
     Object.assign(game, loadedGame);
   }
+}
+
+let resetSafety = 6;
+export function hardReset() {
+  resetSafety--;
+  if (resetSafety <= 0) {
+    pause = true;
+    window.localStorage.removeItem(SaveKey);
+    window.location.reload();
+  }
+  Notify.create({
+    type: 'reset',
+    message: `Click ${resetSafety} more times to wipe all progress`,
+  });
+  return resetSafety;
 }
