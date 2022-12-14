@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+
 import { reactive, nextTick } from 'vue';
 import { Notify } from 'quasar';
-import { ceil, tuple, runLazy, TODO, power, defined } from './util';
+import { ceil, tuple, TODO, power, defined } from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
 import { pickReward, RewardTable } from './random';
+import { deepGet, deepSet, keyPath, KeyPathT } from './keyPath';
 
 const SaveKey = 'gatha-fool';
 
@@ -13,14 +15,14 @@ export type Game = {
     scale: Record<CostValue, number>;
     cnt: number;
     rewards: PrestigeRewardTable;
-    rewardCnt: number | (() => number);
+    rewardCnt: number | KeyPathT<Game>;
   };
   crisis: {
     base: Record<CostValue, number>;
     scale: Record<CostValue, number>;
     cnt: number;
     rewards: PrestigeRewardTable;
-    rewardCnt: number | (() => number);
+    rewardCnt: number | KeyPathT<Game>;
   };
   responses: Record<GatchaName, number>;
   baseIncome: number;
@@ -34,6 +36,14 @@ export type Game = {
   gatchaRewardChanceModifierScaling: number;
 };
 
+const setters = {
+  '+=': (a: number, b: number) => a + b,
+  '-=': (a: number, b: number) => a - b,
+  '*=': (a: number, b: number) => a * b,
+  '/=': (a: number, b: number) => a / b,
+} as const;
+type Setter = keyof typeof setters;
+
 const initialDivisors: () => Record<
   GatchaName,
   Record<CostValue, number>
@@ -46,33 +56,39 @@ const initialMultipliers: () => Record<
 > = () =>
   Object.fromEntries(tuple(GatchaNames.map((x) => [x, { cost: 1, value: 1 }])));
 
-export const game: Game = reactive({
-  responses: Object.fromEntries(tuple(GatchaNames.map((x) => [x, 0]))),
-  baseIncome: 1,
-  worth: 0,
-  bankruptcies: 0,
-  divisors: initialDivisors(),
-  tmpDivisors: initialDivisors(),
-  multipliers: initialMultipliers(),
-  crisisMultiplier: 10,
-  crisis: {
-    base: { cost: 1000, value: 1 },
-    scale: { cost: 1.5, value: 2 },
-    cnt: 0,
-    rewards: crisisRewards(),
-    rewardCnt: 1,
-  },
-  retirement: {
-    base: { cost: 100000, value: 1.5 },
-    scale: { cost: 1.5, value: 1.5 },
-    cnt: 0,
-    rewards: retirementRewards(),
-    rewardCnt: () => game.retirement.cnt,
-  },
-  gatchaRewards: Gatcha.mkRewardTable(1),
-  gatchaRewardChanceModifier: 1,
-  gatchaRewardChanceModifierScaling: 2,
-});
+//const gameGetter = mkGetter(game);
+export const game: Game = (() => {
+  const ret: Game = reactive({
+    responses: Object.fromEntries(tuple(GatchaNames.map((x) => [x, 0]))),
+    baseIncome: 1,
+    worth: 0,
+    bankruptcies: 0,
+    divisors: initialDivisors(),
+    tmpDivisors: initialDivisors(),
+    multipliers: initialMultipliers(),
+    crisis: {
+      base: { cost: 1000, value: 1 },
+      scale: { cost: 1.5, value: 2 },
+      cnt: 0,
+      rewards: undefined as never, //crisisRewards(),
+      rewardCnt: 1,
+    },
+    retirement: {
+      base: { cost: 100000, value: 1.5 },
+      scale: { cost: 1.5, value: 1.5 },
+      cnt: 0,
+      rewards: undefined as never, // retirementRewards(),
+      rewardCnt: 1,
+    },
+    gatchaRewards: Gatcha.mkRewardTable(1),
+    gatchaRewardChanceModifier: 1,
+    gatchaRewardChanceModifierScaling: 2,
+  });
+  ret.retirement.rewardCnt = keyPath(ret, 'retirement', 'cnt');
+  ret.crisis.rewards = crisisRewards(ret);
+  ret.retirement.rewards = retirementRewards(ret);
+  return ret;
+})();
 
 //@ts-expect-error// makes cheating easier
 window.game = game;
@@ -116,7 +132,7 @@ export function getScaledGatcha(
   const params = gatchas[name][type];
   const cnt = _cnt + (type === 'value' ? -1 : 0);
   return (
-    (power(params.base, params.growth, cnt) / getDivisor(name,type)) *
+    (power(params.base, params.growth, cnt) / getDivisor(name, type)) *
     game.multipliers[name][type]
   );
 }
@@ -232,8 +248,15 @@ export function prestige(type: PrestigeType) {
   game.tmpDivisors = initialDivisors();
 
   for (let i = 0; i < runLazy(game[type].rewardCnt); i++) {
-    const [message, effect] = pickReward(game[type].rewards);
-    effect();
+    const [message, effects] = pickReward(game[type].rewards);
+    for (const [path, op, arg] of effects) {
+      // WARNING: whole lot of casting here
+      deepSet(
+        game,
+        path as never,
+        setters[op](deepGet(game, path as never) as number, arg)
+      );
+    }
 
     Notify.create({
       message: `${message}`,
@@ -279,7 +302,7 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
         game.multipliers[name].cost += 1000000;
         message = `${name} is no longer interested in you`;
       } else if (t.tier === maxTiers - 1) {
-        game.multipliers[name].value -= divisor/100;
+        game.multipliers[name].value -= divisor / 100;
         message = `${name} me? No, ${name} you`;
       } else if (t.tier === maxTiers - 2) {
         game.multipliers[name].value = 0;
@@ -298,32 +321,41 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
   return reached;
 }
 
-type PrestigeRewardTable = RewardTable<readonly [string, () => void]>;
+type PrestigeRewardTable = RewardTable<
+  readonly [string, [KeyPathT<Game>, Setter, number][]]
+>;
 
-function crisisRewards(): PrestigeRewardTable {
+function crisisRewards(game: Game): PrestigeRewardTable {
   return RewardTable([
-    ['Extra Income', () => (game.baseIncome *= 1.1)] as const,
+    ['Extra Income', [[keyPath(game, 'baseIncome'), '*=', 1.1]]],
     [
       'Less likely to receive same rewards',
-      () => (game.gatchaRewardChanceModifier *= 2),
-    ] as const,
+      [[keyPath(game, 'gatchaRewardChanceModifier'), '+=', 1]],
+    ],
     [
       'More likely to receive same reward after getting all rewards',
-      () => (game.gatchaRewardChanceModifierScaling *= 2),
-    ] as const,
+      [[keyPath(game, 'gatchaRewardChanceModifierScaling'), '*=', 2]],
+    ],
   ]);
 }
-function retirementRewards(): PrestigeRewardTable {
+
+function retirementRewards(game: Game): PrestigeRewardTable {
   return RewardTable([
     [
       'Rewards per Mid Life Crises',
-      () => (game.crisis.rewardCnt = runLazy(game.crisis.rewardCnt) + 1),
+      [[keyPath(game, 'crisis', 'rewardCnt'), '+=', 1]],
     ],
-    ['Mid Life Crisis cost reduced', () => (game.crisis.base.cost *= 0.9)],
-    ['Mid Life Crisis scaling reduced', () => (game.crisis.scale.cost *= 0.95)],
+    [
+      'Mid Life Crisis cost reduced',
+      [[keyPath(game, 'crisis', 'base', 'cost'), '*=', 0.9]],
+    ],
+    [
+      'Mid Life Crisis scaling reduced',
+      [[keyPath(game, 'crisis', 'scale', 'cost'), '*=', 0.95]],
+    ],
     [
       'Mid Life Crisis income scaling increased',
-      () => (game.crisis.scale.value *= 1.05),
+      [[keyPath(game, 'crisis', 'scale', 'value'), '*=', 1.05]],
     ],
   ]);
 }
@@ -436,4 +468,10 @@ export function hardReset() {
     message: `Click ${resetSafety} more times to wipe all progress`,
   });
   return resetSafety;
+}
+
+export type Lazy = number | KeyPathT<Game>;
+export function runLazy(t: Lazy): number {
+  // WARNING: casting
+  return typeof t === 'number' ? t : deepGet(game, t as never) as number;
 }

@@ -71,13 +71,6 @@ export function defined<T>(x: T | undefined | null) : x is T {
 
 export const id = <T>(t: T) => t;
 
-export type Lazy<T> = T | (() => T);
-export function runLazy<T>(t: Lazy<T>): T {
-  if (t instanceof Function) {
-    return t();
-  }
-  return t;
-}
 
 export function TODO(msg: string) {
   Notify.create({
