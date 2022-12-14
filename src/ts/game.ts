@@ -377,6 +377,7 @@ export function detectLock(doSetMercy: boolean) {
         game.worth = 0;
       });
     }
+    return Math.max(ticksNeeded, 0);
   } else {
     const moneyNeeded = cost - game.worth;
     const ticksNeeded = moneyNeeded / income;
