@@ -34,7 +34,7 @@ export type Gatcha = {
 export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
   tuple(
     [
-      Gatcha('Prank', 1, 1.1, 1, 1.2, [
+      Gatcha('Prank', 1, 1.1, 1, 1.4, [
         "You've learned to hang up",
         'Just chillin and eating some jerky, boys',
         'Mayby don\'t answer "scam likely"',
@@ -43,7 +43,13 @@ export const gatchas: Record<GatchaName, Gatcha> = Object.fromEntries(
       ]),
       Gatcha('Punk', 10, 1.03, 10, 1.15, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
       Gatcha('Scam', 100, 1.12, 100, 1.18, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
-      Gatcha('Phishing', 1000, 1.15, 1000, 1.2, ['TBD', 'TBD', 'TBD', 'TBD', 'TBD']),
+      Gatcha('Phishing', 1000, 1.15, 1000, 1.2, [
+        'TBD',
+        'TBD',
+        'TBD',
+        'TBD',
+        'TBD',
+      ]),
     ].map((x) => [x.name, x])
   )
 );

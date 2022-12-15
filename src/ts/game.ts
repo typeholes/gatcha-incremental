@@ -281,7 +281,7 @@ export function crisis() {
 
 export function retirement() {}
 
-const tiers = [5, 12, 25, 40, 50];
+const tiers = [5, 12, 25, 30, 50];
 export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
   const reached = tiers
     .map((x, i) =>
@@ -302,7 +302,7 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
         game.multipliers[name].cost += 1000000;
         message = `${name} is no longer interested in you`;
       } else if (t.tier === maxTiers - 1) {
-        game.multipliers[name].value -= divisor / 100;
+        game.multipliers[name].value -= divisor / 10000;
         message = `${name} me? No, ${name} you`;
       } else if (t.tier === maxTiers - 2) {
         game.multipliers[name].value = 0;
@@ -473,5 +473,5 @@ export function hardReset() {
 export type Lazy = number | KeyPathT<Game>;
 export function runLazy(t: Lazy): number {
   // WARNING: casting
-  return typeof t === 'number' ? t : deepGet(game, t as never) as number;
+  return typeof t === 'number' ? t : (deepGet(game, t as never) as number);
 }
