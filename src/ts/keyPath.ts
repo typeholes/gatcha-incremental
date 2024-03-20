@@ -142,7 +142,7 @@ const obj = { a: { b: {c : {dfff: 1}}}} as const;
 
 export const foo = keyPath(obj, 'a', 'b', 'c'  );
 
-const bar = deepGet(obj, foo);
+const _bar = deepGet(obj, foo);
 
 deepSet(obj, foo, { dfff: 1 })
 

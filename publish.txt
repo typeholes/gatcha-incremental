@@ -1,0 +1,6 @@
+cd dist/spa
+git init
+git add .
+git commit -m 'publish'
+git push --force https://github.com/typeholes/gatcha-incremental master:gh-pages
+
