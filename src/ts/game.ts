@@ -34,9 +34,10 @@ export type Game = {
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
   gatchaRewardChanceModifier: number;
   gatchaRewardChanceModifierScaling: number;
-  tutorialFlags: {
-    SplashScreen: { conditionMet: boolean; shown: boolean };
-  };
+  tutorialFlags: Record<
+    'SplashScreen' | 'DummyTutorial',
+    { conditionMet: boolean; shown: boolean }
+  >;
   currentTutorial?: keyof Game['tutorialFlags'];
 };
 
@@ -90,6 +91,10 @@ export const game: Game = (() => {
     tutorialFlags: {
       SplashScreen: {
         conditionMet: true,
+        shown: false,
+      },
+      DummyTutorial: {
+        conditionMet: false,
         shown: false,
       },
     },
@@ -409,7 +414,7 @@ let mercyEffect = () => {};
 
 const TickLimit = 60;
 export function detectLock(doSetMercy: boolean) {
-  const [name, cost] = [
+  const [_name, cost] = [
     ...PrestigeTypes.map((name) => [name, prestigeCost(name)] as const),
     ...GatchaNames.slice(0, availableGatchas()).map(
       (name) => [name, getScaledGatcha(name, 'cost')] as const,
@@ -503,13 +508,15 @@ export function runLazy(t: Lazy): number {
 
 export function doTutorial(tutorial: keyof Game['tutorialFlags']) {
   const flags = game.tutorialFlags[tutorial];
-  if (!(flags.conditionMet && !flags.shown)) return;
+  if (flags.shown) return;
+  flags.conditionMet = true;
   game.currentTutorial = tutorial;
 }
 
-export function finishTutorial() {
+export function finishTutorial(onFinish: (...args: any[]) => void) {
   if (!game.currentTutorial) return;
   game.tutorialFlags[game.currentTutorial].shown = true;
   game.currentTutorial = undefined;
+  onFinish();
   save();
 }
