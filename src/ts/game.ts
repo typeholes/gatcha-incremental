@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { reactive, nextTick } from 'vue';
+import { reactive, nextTick, ref } from 'vue';
 import { Notify } from 'quasar';
 import { ceil, tuple, TODO, power, defined } from './util';
 import { CostValue, Gatcha, GatchaName, GatchaNames, gatchas } from './gatcha';
@@ -34,6 +34,10 @@ export type Game = {
   gatchaRewards: RewardTable<readonly [GatchaName, CostValue]>;
   gatchaRewardChanceModifier: number;
   gatchaRewardChanceModifierScaling: number;
+  tutorialFlags: {
+    SplashScreen: { conditionMet: boolean; shown: boolean };
+  };
+  currentTutorial?: keyof Game['tutorialFlags'];
 };
 
 const setters = {
@@ -83,6 +87,13 @@ export const game: Game = (() => {
     gatchaRewards: Gatcha.mkRewardTable(1),
     gatchaRewardChanceModifier: 1,
     gatchaRewardChanceModifierScaling: 2,
+    tutorialFlags: {
+      SplashScreen: {
+        conditionMet: true,
+        shown: false,
+      },
+    },
+    currentTutorial: undefined,
   });
   ret.retirement.rewardCnt = keyPath(ret, 'retirement', 'cnt');
   ret.crisis.rewards = crisisRewards(ret);
@@ -127,7 +138,7 @@ export function getDivisor(name: GatchaName, type: CostValue) {
 export function getScaledGatcha(
   name: GatchaName,
   type: 'cost' | 'value',
-  _cnt = game.responses[name]
+  _cnt = game.responses[name],
 ) {
   const params = gatchas[name][type];
   const cnt = _cnt + (type === 'value' ? -1 : 0);
@@ -156,7 +167,7 @@ export function getIncome() {
 
 export function respond(
   name: GatchaName,
-  next: false | [number, number] = false
+  next: false | [number, number] = false,
 ) {
   const [amt, cost] = next ? next : [1, affordable(name)];
   if (cost) {
@@ -177,6 +188,14 @@ function resetGameValues() {
     game.responses[name] = 0;
   }
   game.tmpDivisors = initialDivisors();
+  resetTutorials();
+}
+
+function resetTutorials() {
+  for (const key in game.tutorialFlags) {
+    const tutorial = key as keyof Game['tutorialFlags'];
+    game.tutorialFlags[tutorial] = { conditionMet: false, shown: false };
+  }
 }
 
 export function getBankruptcyValue(upToGatchaIdx = game.bankruptcies) {
@@ -210,7 +229,7 @@ export function bankrupt() {
 
   const [name, nerfType] = pickReward(
     game.gatchaRewards,
-    game.gatchaRewardChanceModifier
+    game.gatchaRewardChanceModifier,
   );
   if (available != oldAvailable && available <= GatchaNames.length) {
     game.gatchaRewards = Gatcha.mkRewardTable(availableGatchas() - 1);
@@ -233,7 +252,7 @@ export function prestigeCost(type: PrestigeType) {
 }
 
 export const PrestigeTypes = ['crisis', 'retirement'] as const;
-export type PrestigeType = typeof PrestigeTypes[number];
+export type PrestigeType = (typeof PrestigeTypes)[number];
 
 export const PrestigeDescriptions = {
   crisis: 'Mid Life Crisis',
@@ -254,7 +273,7 @@ export function prestige(type: PrestigeType) {
       deepSet(
         game,
         path as never,
-        setters[op](deepGet(game, path as never) as number, arg)
+        setters[op](deepGet(game, path as never) as number, arg),
       );
     }
 
@@ -287,7 +306,7 @@ export function checkTiers(name: GatchaName, oldCnt: number, newCnt: number) {
     .map((x, i) =>
       oldCnt < x && newCnt >= x
         ? { tier: i, message: gatchas[name].tierMessages[i] ?? 'TBD' }
-        : false
+        : false,
     )
     .filter((x) => x != false);
 
@@ -381,6 +400,7 @@ function gameLoop(time: number) {
   nextTick(() => requestAnimationFrame(gameLoop));
 }
 
+export const loaded = ref(false);
 load();
 requestAnimationFrame(gameLoop);
 
@@ -392,7 +412,7 @@ export function detectLock(doSetMercy: boolean) {
   const [name, cost] = [
     ...PrestigeTypes.map((name) => [name, prestigeCost(name)] as const),
     ...GatchaNames.slice(0, availableGatchas()).map(
-      (name) => [name, getScaledGatcha(name, 'cost')] as const
+      (name) => [name, getScaledGatcha(name, 'cost')] as const,
     ),
   ].reduce((a, b) => (b[1] < a[1] ? b : a));
 
@@ -451,7 +471,12 @@ function load() {
   const saveStr = window.localStorage.getItem(SaveKey);
   if (defined(saveStr)) {
     const loadedGame = JSON.parse(saveStr);
+    resetTutorials();
     Object.assign(game, loadedGame);
+    game.currentTutorial ??= game.tutorialFlags.SplashScreen.shown
+      ? undefined
+      : 'SplashScreen';
+    loaded.value = true;
   }
 }
 
@@ -474,4 +499,17 @@ export type Lazy = number | KeyPathT<Game>;
 export function runLazy(t: Lazy): number {
   // WARNING: casting
   return typeof t === 'number' ? t : (deepGet(game, t as never) as number);
+}
+
+export function doTutorial(tutorial: keyof Game['tutorialFlags']) {
+  const flags = game.tutorialFlags[tutorial];
+  if (!(flags.conditionMet && !flags.shown)) return;
+  game.currentTutorial = tutorial;
+}
+
+export function finishTutorial() {
+  if (!game.currentTutorial) return;
+  game.tutorialFlags[game.currentTutorial].shown = true;
+  game.currentTutorial = undefined;
+  save();
 }
