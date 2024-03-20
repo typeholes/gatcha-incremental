@@ -1,0 +1,26 @@
+
+.gameTitle[data-v-afb95e44] {
+  color: green;
+}
+@keyframes fadeIn-afb95e44 {
+from {
+    opacity: 100%;
+}
+to {
+    opacity: 0%;
+}
+}
+.sucker[data-v-afb95e44] {
+  color: red;
+  position: absolute;
+  animation: fadeIn-afb95e44 5s;
+  animation-fill-mode: both;
+}
+.player[data-v-afb95e44] {
+  color: wheat;
+  position: absolute;
+  animation: fadeIn-afb95e44 4s;
+  animation-delay: 1s;
+  animation-direction: reverse;
+  animation-fill-mode: both;
+}
